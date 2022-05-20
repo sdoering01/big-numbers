@@ -8,7 +8,7 @@ Big Numbers should support the following operations:
 
 - [x] Add
 - [ ] Subtract (assuming positive result)
-- [ ] Multiply
+- [x] Multiply
 - [ ] Power with Modulo (a^b mod c)
 - [ ] Modulo
 - [ ] Comparison (greater than, less than, equal to)
