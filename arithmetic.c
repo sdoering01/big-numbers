@@ -255,21 +255,25 @@ BigNum *bn_multiply(BigNum *n1, BigNum *n2) {
     return result;
 }
 
+// Returns a struct holding the quotient and the remainder of the division `n1`
+// / `n2`. If you are only interested in one of the two, you may use
+// `bn_divide` or `bn_mod` respectively.
 bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     // Catch division by zero
     assert(!(n2->len == 1 && *(uint32_t *)n2->data == 0));
 
-    // Result is at most n1->len - (n2->len - 1) long. Let's asume we have two
-    // big numbers n1 = 0xffffffff 0xffffffff 0xffffffff (len=3) and n2 = 1 0
-    // (len=2). Dividing n1 by n2 merely acts as a shift right operation of one
-    // block on n1, even though n2's length is 2. We have to trim the result at
-    // the end, because the example shows only the most extreme case. In other
-    // cases the length might be smaller.
-    size_t result_len = n1->len - (n2->len - 1);
+    // Quotient is at most n1->len - (n2->len - 1) long. Let's asume we have
+    // two big numbers n1 = 0xffffffff 0xffffffff 0xffffffff (len=3) and n2 = 1
+    // 0 (len=2). Dividing n1 by n2 merely acts as a shift right operation of
+    // one block on n1, even though n2's length is 2. We have to trim the
+    // quotient at the end, because the example shows only the most extreme
+    // case. In other cases the length of the quotient might end up smaller.
+    size_t quotient_len = n1->len - (n2->len - 1);
 
-    BigNum *quotient = bn_with_len(result_len);
-
+    BigNum *quotient = bn_with_len(quotient_len);
     BigNum *remainder = bn_zero();
+
+    BigNum *block_quotient = bn_zero();
 
     for (size_t _offset = n1->len; _offset > 0; _offset--) {
         size_t offset = _offset - 1;
@@ -277,7 +281,11 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
         // remainder the block of n1 at offset
         remainder->len += 1;
         remainder->data = realloc(remainder->data, remainder->len * sizeof(uint32_t));
-        memmove((uint32_t *)remainder->data + 1, (uint32_t *)remainder->data, (remainder->len - 1) * sizeof(uint32_t));
+        memmove(
+            (uint32_t *)remainder->data + 1,
+            (uint32_t *)remainder->data,
+            (remainder->len - 1) * sizeof(uint32_t)
+        );
         *(uint32_t *)remainder->data = *((uint32_t *)n1->data + offset);
         // Necessary since left-shifting a 0 leads to a leading 0.
         bn_trim(remainder);
@@ -285,7 +293,7 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
         // Check if remainder can be divided by n2
         if (bn_compare(remainder, n2) >= 0) {
             // Efficiently search for the block_quotient (remainder / n2).
-            BigNum *block_quotient = bn_zero();
+            *(uint32_t *)block_quotient->data = 0;
             for (int bit_offset = 31; bit_offset >= 0; bit_offset--) {
                 *(uint32_t *)block_quotient->data |= (1 << bit_offset);
                 BigNum *product = bn_multiply(block_quotient, n2);
@@ -306,9 +314,10 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
             bn_write_block(quotient, offset, *(uint32_t *)block_quotient->data);
 
             bn_destroy(&product);
-            bn_destroy(&block_quotient);
         }
     }
+
+    bn_destroy(&block_quotient);
 
     bn_trim(quotient);
     bn_trim(remainder);
