@@ -7,11 +7,12 @@ most likely more mature options for production use.
 Big Numbers should support the following operations:
 
 - [x] Add
-- [ ] Subtract (assuming positive result)
+- [x] Subtract (assuming positive result)
 - [x] Multiply
-- [ ] Power with Modulo (a^b mod c)
-- [ ] Modulo
-- [ ] Comparison (greater than, less than, equal to)
+- [x] Divide
+- [x] Modulo
+- [x] Power with Modulo (a^b mod c)
+- [x] Comparison (greater than, less than, equal to)
 - [x] Print as hex
 - [x] Creation from uint32_t
-- [ ] Creation from hex string
+- [x] Creation from hex string
