@@ -95,6 +95,13 @@ static BigNum *bn_with_len(size_t len) {
     return bn;
 }
 
+// Destroy `n`, freeing all its allocated heap memory and setting `*n` to NULL.
+void bn_destroy(BigNum **n) {
+    free((*n)->data);
+    free(*n);
+    *n = NULL;
+}
+
 // Returns a pointer to a BigNum representing 0.
 BigNum *bn_zero() {
     BigNum *bn = malloc(sizeof(BigNum));
@@ -286,7 +293,7 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
                 if (bn_greater_than(product, remainder)) {
                     *(uint32_t *)block_quotient->data ^= (1 << bit_offset);
                 }
-                free(product);
+                bn_destroy(&product);
             }
             BigNum *product = bn_multiply(block_quotient, n2);
 
@@ -294,12 +301,12 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
             // the first, and saving the result in the first operand. But this
             // should be fine to start with.
             BigNum *new_remainder = bn_subtract(remainder, product);
-            free(remainder);
+            bn_destroy(&remainder);
             remainder = new_remainder;
             bn_write_block(quotient, offset, *(uint32_t *)block_quotient->data);
 
-            free(product);
-            free(block_quotient);
+            bn_destroy(&product);
+            bn_destroy(&block_quotient);
         }
     }
 
@@ -321,9 +328,9 @@ int main(void) {
     BigNum *result = bn_add(n1, n2);
     bn_print_hex(result);
 
-    free(n1);
-    free(n2);
-    free(result);
+    bn_destroy(&n1);
+    bn_destroy(&n2);
+    bn_destroy(&result);
     printf("\n");
 
     printf("Adding\n");
@@ -341,9 +348,9 @@ int main(void) {
         bn_greater_than(n1, n2)
     );
 
-    free(result);
-    free(n1);
-    free(n2);
+    bn_destroy(&result);
+    bn_destroy(&n1);
+    bn_destroy(&n2);
     printf("\n");
 
     printf("Multiplying\n");
@@ -384,8 +391,8 @@ int main(void) {
     printf("0xffffffff ^ 8 - 0xffffffff ^ 6: ");
     bn_print_hex(result_diff_4_3);
 
-    free(n1);
-    free(n2);
+    bn_destroy(&n1);
+    bn_destroy(&n2);
     printf("\n");
 
     n1 = bn_with_len(5);
