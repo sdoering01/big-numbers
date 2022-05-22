@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef struct BigNum {
     // Contigious block of memory that holds our 32-bit ints with little
@@ -11,6 +12,13 @@ typedef struct BigNum {
     // Amount of 32-bit ints
     size_t len;
 } BigNum;
+
+typedef struct bn_DivideWithRemainderResult {
+    // Quotient of the division
+    BigNum *quotient;
+    // Remainder of the division
+    BigNum *remainder;
+} bn_DivideWithRemainderResult;
 
 // Returns the block with the `offset` from the start of the BigNum data. It
 // accesses memory that doesn't belong to the given BigNum when offset is out
@@ -156,6 +164,35 @@ BigNum *bn_multiply(BigNum *n1, BigNum *n2) {
 
     bn_trim(result);
 
+    return result;
+}
+
+bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
+    // Catch division by zero
+    assert(!(n2->len == 1 && *(uint32_t *)n2->data == 0));
+
+    // Result is at most n1->len - (n2->len - 1) long. Let's asume we have two
+    // big numbers n1 = 0xffffffff 0xffffffff 0xffffffff (len=3) and n2 = 1 0
+    // (len=2). Dividing n1 by n2 merely acts as a shift right operation of one
+    // block on n1, even though n2's length is 2. We have to trim the result at
+    // the end, becuase the example shows only the most extreme case. In other
+    // cases the length might be smaller.
+    size_t result_len = n1->len - (n2->len - 1);
+
+    BigNum *quotient = bn_with_len(result_len);
+
+    // Copy n1 into a new variable which will be our working copy during the
+    // division and will contain the remainder at the end.
+    BigNum *remainder = malloc(sizeof(BigNum));
+    remainder->len = n1->len;
+    remainder->data = malloc(n1->len * sizeof(uint32_t));
+    memcpy(remainder->data, n1->data, n1->len * sizeof(uint32_t));
+
+    // TODO: Do division
+
+    bn_DivideWithRemainderResult *result = malloc(sizeof(bn_DivideWithRemainderResult));
+    result->quotient = quotient;
+    result->remainder = remainder;
     return result;
 }
 
