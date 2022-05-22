@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+// Max value of a block in BigNum
+#define BN_BLOCK_MAX 0xffffffff
+
 typedef struct BigNum {
     // Contigious block of memory that holds our 32-bit ints with little
     // endianess (the least significant int comes first in memory). The size of
@@ -182,6 +185,45 @@ BigNum *bn_add(BigNum *n1, BigNum *n2) {
     return result;
 }
 
+// Subtracts `n2` from `n1`. This function asserts that `n1` is greater than
+// or equal to `n2`.
+BigNum *bn_subtract(BigNum *n1, BigNum *n2) {
+    assert(bn_compare(n1, n2) >= 0);
+
+    // n1 >= n2, so the result will be at most n1->len long
+    BigNum *result = bn_with_len(n1->len);
+
+    uint32_t transfer = 0;
+    for (size_t offset = 0; offset < n1->len; offset++) {
+        uint32_t n1_block = bn_get_block_unchecked(n1, offset);
+        uint32_t n2_block = bn_get_block(n2, offset);
+
+        if (transfer) {
+            n2_block += transfer;
+            // Only reset transfer, if the addition of the transfer did not
+            // cause an overflow
+            if (n2_block) {
+                transfer = 0;
+            }
+        }
+
+        uint32_t block_diff;
+        if (n1_block >= n2_block) {
+            block_diff = n1_block - n2_block;
+        } else {
+            // n2_block is greater than n1_block, so n1_block + 1 - n2_block is
+            // <= 0. Meaning that this expression will never overflow.
+            block_diff = BN_BLOCK_MAX - n2_block + 1 + n1_block;
+            transfer = 1;
+        }
+        bn_write_block(result, offset, block_diff);
+    }
+
+    bn_trim(result);
+
+    return result;
+}
+
 BigNum *bn_multiply(BigNum *n1, BigNum *n2) {
     // New number is at most n1->len + n2->len long. We can trim the result at
     // the end as in `bn_add` (maybe we need to trim more than one block).
@@ -305,6 +347,10 @@ int main(void) {
     assert(bn_equal_to(result_4, result_4));
     assert(bn_less_than(result_3, result_4));
     assert(bn_greater_than(result_3, result_2));
+
+    BigNum *result_diff_4_3 = bn_subtract(result_4, result_3);
+    printf("0xffffffff ^ 8 - 0xffffffff ^ 6: ");
+    bn_print_hex(result_diff_4_3);
 
     return 0;
 }
