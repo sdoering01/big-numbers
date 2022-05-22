@@ -256,20 +256,52 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     // big numbers n1 = 0xffffffff 0xffffffff 0xffffffff (len=3) and n2 = 1 0
     // (len=2). Dividing n1 by n2 merely acts as a shift right operation of one
     // block on n1, even though n2's length is 2. We have to trim the result at
-    // the end, becuase the example shows only the most extreme case. In other
+    // the end, because the example shows only the most extreme case. In other
     // cases the length might be smaller.
     size_t result_len = n1->len - (n2->len - 1);
 
     BigNum *quotient = bn_with_len(result_len);
 
-    // Copy n1 into a new variable which will be our working copy during the
-    // division and will contain the remainder at the end.
-    BigNum *remainder = malloc(sizeof(BigNum));
-    remainder->len = n1->len;
-    remainder->data = malloc(n1->len * sizeof(uint32_t));
-    memcpy(remainder->data, n1->data, n1->len * sizeof(uint32_t));
+    BigNum *remainder = bn_zero();
 
-    // TODO: Do division
+    for (size_t _offset = n1->len; _offset > 0; _offset--) {
+        size_t offset = _offset - 1;
+        // Shift left remainder by one block and set least significant block of
+        // remainder the block of n1 at offset
+        remainder->len += 1;
+        remainder->data = realloc(remainder->data, remainder->len * sizeof(uint32_t));
+        memmove((uint32_t *)remainder->data + 1, (uint32_t *)remainder->data, (remainder->len - 1) * sizeof(uint32_t));
+        *(uint32_t *)remainder->data = *((uint32_t *)n1->data + offset);
+        // Necessary since left-shifting a 0 leads to a leading 0.
+        bn_trim(remainder);
+
+        // Check if remainder can be divided by n2
+        if (bn_compare(remainder, n2) >= 0) {
+            // Efficiently search for the block_quotient (remainder / n2).
+            BigNum *block_quotient = bn_zero();
+            for (int bit_offset = 31; bit_offset >= 0; bit_offset--) {
+                *(uint32_t *)block_quotient->data |= (1 << bit_offset);
+                BigNum *product = bn_multiply(block_quotient, n2);
+                // flip the bit back to 0 if the block_quotient is too large
+                if (bn_greater_than(product, remainder)) {
+                    *(uint32_t *)block_quotient->data ^= (1 << bit_offset);
+                }
+                free(product);
+            }
+            BigNum *product = bn_multiply(block_quotient, n2);
+
+            // Could write a function that subtracts the second operand from
+            // the first, and saving the result in the first operand. But this
+            // should be fine to start with.
+            BigNum *new_remainder = bn_subtract(remainder, product);
+            free(remainder);
+            remainder = new_remainder;
+            bn_write_block(quotient, offset, *(uint32_t *)block_quotient->data);
+
+            free(product);
+            free(block_quotient);
+        }
+    }
 
     bn_trim(quotient);
     bn_trim(remainder);
@@ -351,6 +383,26 @@ int main(void) {
     BigNum *result_diff_4_3 = bn_subtract(result_4, result_3);
     printf("0xffffffff ^ 8 - 0xffffffff ^ 6: ");
     bn_print_hex(result_diff_4_3);
+
+    free(n1);
+    free(n2);
+    printf("\n");
+
+    n1 = bn_with_len(5);
+    bn_write_block(n1, 4, 0xffff);
+    bn_write_block(n1, 3, 0xfedc);
+    bn_write_block(n1, 0, 0xffff);
+    n2 = bn_with_len(4);
+    bn_write_block(n2, 3, 1);
+    bn_DivideWithRemainderResult *divide_result = bn_divide_with_remainder(n1, n2);
+    printf("Dividend: ");
+    bn_print_hex(n1);
+    printf("Divisor: ");
+    bn_print_hex(n2);
+    printf("Quotient: ");
+    bn_print_hex(divide_result->quotient);
+    printf("Remainder: ");
+    bn_print_hex(divide_result->remainder);
 
     return 0;
 }
