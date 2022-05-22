@@ -229,6 +229,9 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
 
     // TODO: Do division
 
+    bn_trim(quotient);
+    bn_trim(remainder);
+
     bn_DivideWithRemainderResult *result = malloc(sizeof(bn_DivideWithRemainderResult));
     result->quotient = quotient;
     result->remainder = remainder;
