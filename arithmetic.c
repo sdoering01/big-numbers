@@ -319,6 +319,25 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     return result;
 }
 
+// Returns the result of the division `n1` / `n2`, ignoring the remainder. If
+// you also need the remainder, you may use `bn_divide_with_remainder`.
+BigNum *bn_divide(BigNum *n1, BigNum *n2) {
+    bn_DivideWithRemainderResult *result = bn_divide_with_remainder(n1, n2);
+    BigNum *quotient = result->quotient;
+    bn_destroy(&result->remainder);
+    free(result);
+    return quotient;
+}
+
+// Returns the remainder of the division `n1` / `n2`.
+BigNum *bn_mod(BigNum *n1, BigNum *n2) {
+    bn_DivideWithRemainderResult *result = bn_divide_with_remainder(n1, n2);
+    BigNum *remainder = result->remainder;
+    bn_destroy(&result->quotient);
+    free(result);
+    return remainder;
+}
+
 int main(void) {
     printf("Adding\n");
     BigNum *n1 = bn_from_uint32_t(0x1);
@@ -410,6 +429,13 @@ int main(void) {
     bn_print_hex(divide_result->quotient);
     printf("Remainder: ");
     bn_print_hex(divide_result->remainder);
+
+    BigNum *quotient = bn_divide(n1, n2);
+    printf("Quotient (bn_divide): ");
+    bn_print_hex(quotient);
+    BigNum *mod = bn_mod(n1, n2);
+    printf("Remainder (bn_mod): ");
+    bn_print_hex(mod);
 
     return 0;
 }
