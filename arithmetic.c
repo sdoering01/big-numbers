@@ -119,6 +119,45 @@ void bn_print_hex(BigNum *n) {
     printf("\n");
 }
 
+// Compares the big numbers `n1` and `n2`. Returns a positive result, if `n1`
+// is greater than `n2`. Returns a negative result, if `n1` is less than `n2`.
+// Returns 0, if `n1` is equal to `n2`.
+int bn_compare(BigNum *n1, BigNum *n2) {
+    if (n1->len > n2->len) {
+        return 1;
+    } else if (n1->len < n2->len) {
+        return -1;
+    } else {
+        // Compare blocks, starting at the most significant block
+        for (size_t offset = n1->len; offset > 0; offset--) {
+            uint32_t n1_block = bn_get_block_unchecked(n1, offset - 1);
+            uint32_t n2_block = bn_get_block_unchecked(n2, offset - 1);
+            if (n1_block > n2_block) {
+                return 1;
+            } else if (n1_block < n2_block) {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+}
+
+// Returns whether `n1` is greater than `n2`.
+int bn_greater_than(BigNum *n1, BigNum *n2) {
+    return bn_compare(n1, n2) > 0;
+}
+
+// Returns whether `n1` is less than `n2`.
+int bn_less_than(BigNum *n1, BigNum *n2) {
+    return bn_compare(n1, n2) < 0;
+}
+
+// Returns whether `n1` is equal to `n2`.
+int bn_equal_to(BigNum *n1, BigNum *n2) {
+    return bn_compare(n1, n2) == 0;
+}
+
 BigNum *bn_add(BigNum *n1, BigNum *n2) {
     size_t greater_len = n1->len > n2->len ? n1->len : n2->len;
     size_t result_len = greater_len + 1;
@@ -218,6 +257,13 @@ int main(void) {
     result = bn_add(n1, n2);
     bn_print_hex(result);
 
+    printf(
+        "n1 == n2: %d, n1 < n2: %d, n1 > n2: %d",
+        bn_equal_to(n1, n2),
+        bn_less_than(n1, n2),
+        bn_greater_than(n1, n2)
+    );
+
     free(result);
     free(n1);
     free(n2);
@@ -252,6 +298,10 @@ int main(void) {
     BigNum *result_4 = bn_multiply(result_2, result_2);
     printf("0xffffffff ^ 8: ");
     bn_print_hex(result_4);
+
+    assert(bn_equal_to(result_4, result_4));
+    assert(bn_less_than(result_3, result_4));
+    assert(bn_greater_than(result_3, result_2));
 
     return 0;
 }
