@@ -127,6 +127,68 @@ BigNum *bn_from_uint32_t(uint32_t n) {
     return bn;
 }
 
+// Converts a hex string to a big number. The string may contain all valid hex
+// chars (0-9, a-f, A-F). Spaces are ignored. This function returns a null pointer,
+// if a null pointer or an invalid string is provided.
+BigNum *bn_from_hex(const char *str) {
+    if (!str) {
+        return NULL;
+    }
+
+    size_t num_chars = 0;
+    size_t num_hex_chars = 0;
+    for (const char *c = str; *c; c++) {
+        if ((*c >= '0' && *c <= '9') || (*c >= 'a' && *c <= 'f') || (*c >= 'A' && *c <= 'F')) {
+            num_hex_chars++;
+        } else if (*c != ' ') {
+            fprintf(stderr, "warning in bn_from_hex: found invalid hex char '%c' at pos %zu\n", *c, num_chars);
+            return NULL;
+        }
+        num_chars++;
+    }
+
+    if (num_hex_chars == 0) {
+        return NULL;
+    }
+
+    size_t len = (num_hex_chars + 7) / 8;
+    BigNum *result = bn_with_len(len);
+
+    uint32_t block = 0;
+    int hex_chars_read = 0;
+    size_t offset = 0;
+
+    for (const char *c = str + num_chars - 1; c >= str; c--) {
+        if (*c != ' ') {
+            uint32_t c_val;
+            if (*c >= '0' && *c <= '9') {
+                c_val =  *c - '0';
+            } else if (*c >= 'a' && *c <= 'f') {
+                c_val =  10 + *c - 'a';
+            } else {
+                c_val = 10 + *c - 'A';
+            }
+            block += (c_val << (4 * hex_chars_read));
+            hex_chars_read++;
+
+            if (hex_chars_read == 8) {
+                bn_write_block(result, offset, block);
+                block = 0;
+                hex_chars_read = 0;
+                offset++;
+            }
+        }
+    }
+
+    if (hex_chars_read) {
+        bn_write_block(result, offset, block);
+    }
+
+    bn_trim(result);
+
+    return result;
+}
+
 // This prints the BigNum in Big Endian representation to be more
 // human-readable.
 void bn_print_hex(BigNum *n) {
@@ -519,6 +581,30 @@ int main(void) {
     result = bn_power_mod(result_2, zero, mod);
     printf("Result (with exponent 0): ");
     bn_print_hex(result);
+
+    printf("\n");
+    printf("From hex\n");
+    const char *strings[] = {
+        "000000000",
+        "123456789abcdef",
+        "123",
+        "ffff ffff aaaa dddd eeee",
+        "foobar",
+        "",
+        "  ",
+        " bla bla ",
+        NULL
+    };
+    for (const char **str = strings; *str; str++) {
+        BigNum *from_hex = bn_from_hex(*str);
+        printf("\"%s\": ", *str);
+        if (from_hex) {
+            bn_print_hex(from_hex);
+            bn_destroy(&from_hex);
+        } else {
+            printf("NULL\n");
+        }
+    }
 
     return 0;
 }
