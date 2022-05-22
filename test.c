@@ -36,12 +36,14 @@ static void run_test(TestResult (*test)(), const char *test_name) {
         }
     } else {
         tests_successful++;
+        printf(".");
+        fflush(stdout);
     }
 }
 
 static void print_test_results() {
     printf(
-        "finished: %d test(s) run -- %d test(s) successful -- %d test(s) failed\n",
+        "\nfinished: %d test(s) run -- %d test(s) successful -- %d test(s) failed\n",
         tests_run,
         tests_successful,
         tests_run - tests_successful
