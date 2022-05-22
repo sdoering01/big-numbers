@@ -110,6 +110,15 @@ BigNum *bn_zero() {
     return bn;
 }
 
+// Returns a pointer to a BigNum representing 1.
+BigNum *bn_one() {
+    BigNum *bn = malloc(sizeof(BigNum));
+    bn->len = 1;
+    bn->data = malloc(sizeof(uint32_t));
+    *((uint32_t *)bn->data) = 1;
+    return bn;
+}
+
 // Returns a pointer to a BigNum representing the given `n`.
 BigNum *bn_from_uint32_t(uint32_t n) {
     BigNum *bn = bn_zero();
@@ -347,6 +356,46 @@ BigNum *bn_mod(BigNum *n1, BigNum *n2) {
     return remainder;
 }
 
+// Returns result of (`base` ^ `exp`) % `mod` using the square and multiply
+// algorithm.
+BigNum *bn_power_mod(BigNum *base, BigNum *exp, BigNum *mod) {
+    BigNum *result = bn_one();
+
+    int search_start = 1;
+    for (size_t _exp_offset = exp->len; _exp_offset > 0; _exp_offset--) {
+        size_t exp_offset = _exp_offset - 1;
+        uint32_t exp_block = *((uint32_t *)exp->data + exp_offset);
+        for (int exp_bit_offset = 31; exp_bit_offset >= 0; exp_bit_offset--) {
+            int bit = exp_block & (1 << exp_bit_offset);
+            if (search_start) {
+                if (bit) {
+                    search_start = 0;
+                } else {
+                    continue;
+                }
+            }
+
+            BigNum *new_result = bn_multiply(result, result);
+            bn_destroy(&result);
+            result = new_result;
+
+            if (bit) {
+                BigNum *new_result = bn_multiply(result, base);
+                bn_destroy(&result);
+                result = new_result;
+            }
+
+            new_result = bn_mod(result, mod);
+            bn_destroy(&result);
+            result = new_result;
+        }
+    }
+
+    bn_trim(result);
+
+    return result;
+}
+
 int main(void) {
     printf("Adding\n");
     BigNum *n1 = bn_from_uint32_t(0x1);
@@ -445,6 +494,31 @@ int main(void) {
     BigNum *mod = bn_mod(n1, n2);
     printf("Remainder (bn_mod): ");
     bn_print_hex(mod);
+
+    bn_destroy(&mod);
+    bn_destroy(&result);
+    printf("\n");
+    printf("Modular exponentiation\n");
+
+    BigNum *exponent = bn_from_uint32_t(0x12345);
+    mod =  bn_from_uint32_t(0xffff0);
+    result = bn_power_mod(result_2, exponent, mod);
+
+    printf("Base: ");
+    bn_print_hex(result_2);
+    printf("Exponent: ");
+    bn_print_hex(exponent);
+    printf("Mod: ");
+    bn_print_hex(mod);
+    printf("Result: ");
+    bn_print_hex(result);
+
+    bn_destroy(&result);
+
+    BigNum *zero = bn_zero();
+    result = bn_power_mod(result_2, zero, mod);
+    printf("Result (with exponent 0): ");
+    bn_print_hex(result);
 
     return 0;
 }
