@@ -43,7 +43,7 @@ static void run_test(TestResult (*test)(), const char *test_name) {
 
 static void print_test_results() {
     printf(
-        "\nfinished: %d test(s) run -- %d test(s) successful -- %d test(s) failed\n",
+        "\nfinished: %d test(s) -- %d successful -- %d failed\n",
         tests_run,
         tests_successful,
         tests_run - tests_successful
