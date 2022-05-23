@@ -1,3 +1,9 @@
+// Runs unit tests on arithmetic functions.
+//
+// Allocated heap memory for tests is never `free`d during the test execution,
+// since this is meant to be a standalone executable. The allocated heap memory
+// is at most some KB large.
+
 #include "arithmetic.c"
 
 typedef struct TestResult {
@@ -16,7 +22,7 @@ typedef struct TestResult {
 
 #define TEST_ASSERT_EQ(message, n1, n2) TEST_ASSERT(message, bn_equal_to(n1, n2))
 
-#define TEST_SUCCESS()                       \
+#define TEST_SUCCESS()                  \
     do {                                \
         TestResult r = {1, 0, NULL};    \
         return r;                       \
