@@ -1,27 +1,8 @@
 #include <stdint.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-
-// Max value of a block in BigNum
-#define BN_BLOCK_MAX 0xffffffff
-
-typedef struct BigNum {
-    // Contigious block of memory that holds our 32-bit ints with little
-    // endianess (the least significant int comes first in memory). The size of
-    // this block will be exactly 4 * `len` bytes.
-    void* data;
-    // Amount of 32-bit ints
-    size_t len;
-} BigNum;
-
-typedef struct bn_DivideWithRemainderResult {
-    // Quotient of the division
-    BigNum *quotient;
-    // Remainder of the division
-    BigNum *remainder;
-} bn_DivideWithRemainderResult;
+#include "arithmetic.h"
 
 // Returns the block with the `offset` from the start of the BigNum data. It
 // accesses memory that doesn't belong to the given BigNum when offset is out
@@ -95,14 +76,12 @@ static BigNum *bn_with_len(size_t len) {
     return bn;
 }
 
-// Destroy `n`, freeing all its allocated heap memory and setting `*n` to NULL.
 void bn_destroy(BigNum **n) {
     free((*n)->data);
     free(*n);
     *n = NULL;
 }
 
-// Returns a pointer to a BigNum representing 0.
 BigNum *bn_zero() {
     BigNum *bn = malloc(sizeof(BigNum));
     bn->len = 1;
@@ -110,7 +89,6 @@ BigNum *bn_zero() {
     return bn;
 }
 
-// Returns a pointer to a BigNum representing 1.
 BigNum *bn_one() {
     BigNum *bn = malloc(sizeof(BigNum));
     bn->len = 1;
@@ -119,7 +97,6 @@ BigNum *bn_one() {
     return bn;
 }
 
-// Returns a pointer to a BigNum representing the given `n`.
 BigNum *bn_from_uint32_t(uint32_t n) {
     BigNum *bn = bn_zero();
     uint32_t *data_ptr = bn->data;
@@ -127,9 +104,6 @@ BigNum *bn_from_uint32_t(uint32_t n) {
     return bn;
 }
 
-// Converts a hex string to a big number. The string may contain all valid hex
-// chars (0-9, a-f, A-F). Spaces are ignored. This function returns a null pointer,
-// if a null pointer or an invalid string is provided.
 BigNum *bn_from_hex(const char *str) {
     if (!str) {
         return NULL;
@@ -189,8 +163,6 @@ BigNum *bn_from_hex(const char *str) {
     return result;
 }
 
-// This prints the BigNum in Big Endian representation to be more
-// human-readable.
 void bn_print_hex(BigNum *n) {
     // size_t can't be negative, this we can't use offset >= 0 as condition.
     // Because of that we count from `n->len` to 1 and use `offset - 1`.
@@ -200,9 +172,6 @@ void bn_print_hex(BigNum *n) {
     printf("\n");
 }
 
-// Compares the big numbers `n1` and `n2`. Returns a positive result, if `n1`
-// is greater than `n2`. Returns a negative result, if `n1` is less than `n2`.
-// Returns 0, if `n1` is equal to `n2`.
 int bn_compare(BigNum *n1, BigNum *n2) {
     if (n1->len > n2->len) {
         return 1;
@@ -224,17 +193,14 @@ int bn_compare(BigNum *n1, BigNum *n2) {
     }
 }
 
-// Returns whether `n1` is greater than `n2`.
 int bn_greater_than(BigNum *n1, BigNum *n2) {
     return bn_compare(n1, n2) > 0;
 }
 
-// Returns whether `n1` is less than `n2`.
 int bn_less_than(BigNum *n1, BigNum *n2) {
     return bn_compare(n1, n2) < 0;
 }
 
-// Returns whether `n1` is equal to `n2`.
 int bn_equal_to(BigNum *n1, BigNum *n2) {
     return bn_compare(n1, n2) == 0;
 }
@@ -263,8 +229,6 @@ BigNum *bn_add(BigNum *n1, BigNum *n2) {
     return result;
 }
 
-// Subtracts `n2` from `n1`. This function asserts that `n1` is greater than
-// or equal to `n2`.
 BigNum *bn_subtract(BigNum *n1, BigNum *n2) {
     assert(bn_compare(n1, n2) >= 0);
 
@@ -326,9 +290,6 @@ BigNum *bn_multiply(BigNum *n1, BigNum *n2) {
     return result;
 }
 
-// Returns a struct holding the quotient and the remainder of the division `n1`
-// / `n2`. If you are only interested in one of the two, you may use
-// `bn_divide` or `bn_mod` respectively.
 bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     // Catch division by zero
     assert(!(n2->len == 1 && *(uint32_t *)n2->data == 0));
@@ -406,8 +367,6 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     return result;
 }
 
-// Returns the result of the division `n1` / `n2`, ignoring the remainder. If
-// you also need the remainder, you may use `bn_divide_with_remainder`.
 BigNum *bn_divide(BigNum *n1, BigNum *n2) {
     bn_DivideWithRemainderResult *result = bn_divide_with_remainder(n1, n2);
     BigNum *quotient = result->quotient;
@@ -416,7 +375,6 @@ BigNum *bn_divide(BigNum *n1, BigNum *n2) {
     return quotient;
 }
 
-// Returns the remainder of the division `n1` / `n2`.
 BigNum *bn_mod(BigNum *n1, BigNum *n2) {
     bn_DivideWithRemainderResult *result = bn_divide_with_remainder(n1, n2);
     BigNum *remainder = result->remainder;
@@ -425,8 +383,6 @@ BigNum *bn_mod(BigNum *n1, BigNum *n2) {
     return remainder;
 }
 
-// Returns result of (`base` ^ `exp`) % `mod` using the square and multiply
-// algorithm.
 BigNum *bn_power_mod(BigNum *base, BigNum *exp, BigNum *mod) {
     BigNum *result = bn_one();
 
