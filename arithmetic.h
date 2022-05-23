@@ -1,6 +1,10 @@
 #ifndef BN_ARITHMETIC_H_
 #define BN_ARITHMETIC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 
 // Max value of a block in BigNum
@@ -87,5 +91,9 @@ BigNum *bn_mod(BigNum *n1, BigNum *n2);
 // Returns the result of the modular exponentiation (`base` ^ `exp`) % `mod` as
 // a new big number. This function uses the square and multiply algorithm.
 BigNum *bn_power_mod(BigNum *base, BigNum *exp, BigNum *mod);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // BN_ARITHMETIC_H_
