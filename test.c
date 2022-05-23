@@ -8,42 +8,42 @@
 
 typedef struct TestResult {
     int success;
+    char *file;
     int line;
     char *message;
 } TestResult;
 
-#define TEST_ASSERT(message, test)                          \
-    do {                                                    \
-        if (!(test)) {                                      \
-            TestResult result = { 0, __LINE__, message };   \
-            return result;                                  \
-        }                                                   \
+#define TEST_ASSERT(message, test)                                      \
+    do {                                                                \
+        if (!(test)) {                                                  \
+            TestResult result = { 0, __FILE__, __LINE__, message };     \
+            return result;                                              \
+        }                                                               \
     } while (0)
 
 #define TEST_ASSERT_EQ(message, n1, n2) TEST_ASSERT(message, bn_equal_to(n1, n2))
 
-#define TEST_SUCCESS()                  \
-    do {                                \
-        TestResult r = {1, 0, NULL};    \
-        return r;                       \
+#define TEST_SUCCESS()                          \
+    do {                                        \
+        TestResult r = {1, NULL, 0, NULL};      \
+        return r;                               \
     } while (0)
 
 int tests_run = 0;
 int tests_successful = 0;
 
 static void run_test(TestResult (*test)(), const char *test_name) {
+    printf("running test %s\n", test_name);
     TestResult r = test();
     tests_run++;
     if (!r.success) {
         if (r.message && *r.message) {
-            fprintf(stderr, "%s failed (assertion in line %d): %s\n", test_name, r.line, r.message);
+            fprintf(stderr, "%s failed (assertion at %s:%d): %s\n", test_name, r.file, r.line, r.message);
         } else {
             fprintf(stderr, "%s failed (line %d)\n", test_name, r.line);
         }
     } else {
         tests_successful++;
-        printf(".");
-        fflush(stdout);
     }
 }
 
