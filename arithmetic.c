@@ -333,13 +333,20 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     // Catch division by zero
     assert(!(n2->len == 1 && *(uint32_t *)n2->data == 0));
 
-    // Quotient is at most n1->len - (n2->len - 1) long. Let's asume we have
-    // two big numbers n1 = 0xffffffff 0xffffffff 0xffffffff (len=3) and n2 = 1
-    // 0 (len=2). Dividing n1 by n2 merely acts as a shift right operation of
-    // one block on n1, even though n2's length is 2. We have to trim the
-    // quotient at the end, because the example shows only the most extreme
-    // case. In other cases the length of the quotient might end up smaller.
-    size_t quotient_len = n1->len - (n2->len - 1);
+    // Quotient is at most n1->len - (n2->len - 1) long if n1->len > n2->len.
+    // Let's asume we have two big numbers n1 = 0xffffffff 0xffffffff
+    // 0xffffffff (len=3) and n2 = 1 0 (len=2). Dividing n1 by n2 merely acts
+    // as a shift right operation of one block on n1, even though n2's length
+    // is 2. We have to trim the quotient at the end, because the example shows
+    // only the most extreme case. In other cases the length of the quotient
+    // might end up smaller. When n1->len <= n2->len the result will be only
+    // one block long.
+    size_t quotient_len;
+    if (n1->len > n2->len) {
+        quotient_len = n1->len - (n2->len - 1);
+    } else {
+        quotient_len = 1;
+    }
 
     BigNum *quotient = bn_with_len(quotient_len);
     BigNum *remainder = bn_zero();
@@ -457,4 +464,3 @@ BigNum *bn_power_mod(BigNum *base, BigNum *exp, BigNum *mod) {
 
     return result;
 }
-
