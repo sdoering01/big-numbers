@@ -259,6 +259,16 @@ static TestResult test_bn_subtract() {
     got_result = bn_subtract(n1, n2);
     should_result = bn_from_hex("00AA213E 46D744F6 B924AEA0");
     TEST_ASSERT_EQ("", got_result, should_result);
+
+    n1 = bn_from_hex("       EBA11829 27F45C1B");
+    n2 = bn_from_hex("AA213F 32785D1F E1190ABB");
+    got_result = bn_subtract(n1, n2);
+    TEST_ASSERT("negative subtraction results in null pointer", !got_result);
+
+    n1 = bn_zero();
+    n2 = bn_one();
+    got_result = bn_subtract(n1, n2);
+    TEST_ASSERT("negative subtraction results in null pointer", !got_result);
     
     TEST_SUCCESS();
 }
@@ -361,6 +371,11 @@ static TestResult test_bn_divide_with_remainder() {
     TEST_ASSERT_EQ("", got_result->quotient, should_quotient);
     TEST_ASSERT_EQ("", got_result->remainder, should_remainder);
 
+    n1 = bn_from_hex("C5367281 19283712");
+    n2 = bn_zero();
+    got_result = bn_divide_with_remainder(n1, n2);
+    TEST_ASSERT("dividing by zero results in null pointer", !got_result);
+
     TEST_SUCCESS();
 }
 
@@ -397,6 +412,11 @@ static TestResult test_bn_divide() {
     should_result = bn_from_hex("09232E2E");
     TEST_ASSERT_EQ("", got_result, should_result);
 
+    n1 = bn_from_hex("C5367281 19283712");
+    n2 = bn_zero();
+    got_result = bn_divide(n1, n2);
+    TEST_ASSERT("dividing by zero results in null pointer", !got_result);
+
     TEST_SUCCESS();
 }
 
@@ -432,6 +452,11 @@ static TestResult test_bn_mod() {
     got_result = bn_mod(n1, n2);
     should_result = bn_from_hex("03F3ED12 94BB8AED");
     TEST_ASSERT_EQ("", got_result, should_result);
+
+    n1 = bn_from_hex("C5367281 19283712");
+    n2 = bn_zero();
+    got_result = bn_mod(n1, n2);
+    TEST_ASSERT("modulo by zero results in null pointer", !got_result);
 
     TEST_SUCCESS();
 }
@@ -480,6 +505,12 @@ static TestResult test_bn_power_mod() {
     got_result = bn_power_mod(base, exp, mod);
     should_result = bn_from_hex("004D4632 D1651F795 FE624A515 EE2CF5E0 095B4020");
     TEST_ASSERT_EQ("", got_result, should_result);
+
+    base = bn_from_hex("25378933 47238921 10457832");
+    exp = bn_from_hex("FE21");
+    mod = bn_zero();
+    got_result = bn_power_mod(base, exp, mod);
+    TEST_ASSERT("`mod` = 0 results in null pointer", !got_result);
 
     TEST_SUCCESS();
 }

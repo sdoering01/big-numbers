@@ -230,7 +230,9 @@ BigNum *bn_add(BigNum *n1, BigNum *n2) {
 }
 
 BigNum *bn_subtract(BigNum *n1, BigNum *n2) {
-    assert(bn_compare(n1, n2) >= 0);
+    if (bn_greater_than(n2, n1)) {
+        return NULL;
+    }
 
     // n1 >= n2, so the result will be at most n1->len long
     BigNum *result = bn_with_len(n1->len);
@@ -292,7 +294,9 @@ BigNum *bn_multiply(BigNum *n1, BigNum *n2) {
 
 bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
     // Catch division by zero
-    assert(!(n2->len == 1 && *(uint32_t *)n2->data == 0));
+    if (n2->len == 1 && *(uint32_t *)n2->data == 0) {
+        return NULL;
+    }
 
     // Quotient is at most n1->len - (n2->len - 1) long if n1->len > n2->len.
     // Let's asume we have two big numbers n1 = 0xffffffff 0xffffffff
@@ -369,21 +373,31 @@ bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2) {
 
 BigNum *bn_divide(BigNum *n1, BigNum *n2) {
     bn_DivideWithRemainderResult *result = bn_divide_with_remainder(n1, n2);
-    BigNum *quotient = result->quotient;
-    bn_destroy(&result->remainder);
-    free(result);
+    BigNum *quotient = NULL;
+    if (result) {
+        quotient = result->quotient;
+        bn_destroy(&result->remainder);
+        free(result);
+    }
     return quotient;
 }
 
 BigNum *bn_mod(BigNum *n1, BigNum *n2) {
     bn_DivideWithRemainderResult *result = bn_divide_with_remainder(n1, n2);
-    BigNum *remainder = result->remainder;
-    bn_destroy(&result->quotient);
-    free(result);
+    BigNum *remainder = NULL;
+    if (result) {
+        remainder = result->remainder;
+        bn_destroy(&result->quotient);
+        free(result);
+    }
     return remainder;
 }
 
 BigNum *bn_power_mod(BigNum *base, BigNum *exp, BigNum *mod) {
+    if (mod->len == 1 && *((uint32_t *)mod->data) == 0) {
+        return NULL;
+    }
+
     BigNum *result = bn_one();
 
     int search_start = 1;

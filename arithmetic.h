@@ -68,28 +68,30 @@ int bn_equal_to(BigNum *n1, BigNum *n2);
 // Returns the result of the addition `n1` + `n2` as a new big number.
 BigNum *bn_add(BigNum *n1, BigNum *n2);
 
-// Returns the result of the subtraction `n2` - `n1` as a new big number. This
-// function asserts that `n1` is greater than or equal to `n2`.
+// Returns the result of the subtraction `n2` - `n1` as a new big number.
+// Returns a null pointer if `n2` is greater than `n1`.
 BigNum *bn_subtract(BigNum *n1, BigNum *n2);
 
 // Returns the result of the multiplication `n1` * `n2` as a new big number.
 BigNum *bn_multiply(BigNum *n1, BigNum *n2);
 
-// Returns the quotient and the remainder of the division `n1` / `n2`. If you
-// are only interested in one of the two, you may use `bn_divide` or `bn_mod`
-// respectively.
+// Returns the quotient and the remainder of the division `n1` / `n2`. Returns
+// a null pointer when `n2` is 0. If you are only interested in one of the two,
+// you may use `bn_divide` or `bn_mod` respectively.
 bn_DivideWithRemainderResult *bn_divide_with_remainder(BigNum *n1, BigNum *n2);
 
 // Returns the quotient of the division `n1` / `n2` as a new big number,
-// ignoring the remainder. If you also need the remainder, you may use
-// `bn_divide_with_remainder`.
+// ignoring the remainder. Returns a null pointer when `n2` is 0. If you also
+// need the remainder, you may use `bn_divide_with_remainder`.
 BigNum *bn_divide(BigNum *n1, BigNum *n2);
 
 // Returns the remainder of the division `n1` / `n2` as a new big number.
+// Returns a null pointer when `n2` is 0.
 BigNum *bn_mod(BigNum *n1, BigNum *n2);
 
 // Returns the result of the modular exponentiation (`base` ^ `exp`) % `mod` as
-// a new big number. This function uses the square and multiply algorithm.
+// a new big number. Returns a null pointer if `mod` is 0. This function uses
+// the square and multiply algorithm.
 BigNum *bn_power_mod(BigNum *base, BigNum *exp, BigNum *mod);
 
 #ifdef __cplusplus
