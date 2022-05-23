@@ -16,3 +16,14 @@ Big Numbers should support the following operations:
 - [x] Print as hex
 - [x] Creation from uint32_t
 - [x] Creation from hex string
+
+## Usage
+
+To use this project as a library, include the header in your project and
+provide the object file to the linker. The header can be used in C and C++.
+
+The project provides unit tests, a C example and a C++ example. Their binary
+can be compiled by using GNU make with the targets `test`, `mainc`, `maincpp`
+respectively. `make all` can be used to compile all binaries at once.
+
+To run all tests, run `make test && ./test`.
