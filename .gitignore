@@ -1,0 +1,4 @@
+*.o
+mainc
+maincpp
+test
