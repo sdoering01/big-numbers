@@ -82,6 +82,17 @@ void bn_destroy(BigNum **n) {
     *n = NULL;
 }
 
+BigNum *bn_copy(BigNum *orig) {
+    if (!orig) {
+        return NULL;
+    }
+    BigNum *copy = malloc(sizeof(BigNum));
+    copy->len = orig->len;
+    copy->data = malloc(copy->len * sizeof(uint32_t));
+    memcpy(copy->data, orig->data, copy->len * sizeof(uint32_t));
+    return copy;
+}
+
 BigNum *bn_zero() {
     BigNum *bn = malloc(sizeof(BigNum));
     bn->len = 1;

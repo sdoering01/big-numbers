@@ -34,6 +34,9 @@ typedef struct bn_DivideWithRemainderResult {
 // NULL.
 void bn_destroy(BigNum **n);
 
+// Creates a new heap-allocated BigNum from `orig`.
+BigNum *bn_copy(BigNum *orig);
+
 // Returns a pointer to a newly created big number representing 0.
 BigNum *bn_zero();
 
