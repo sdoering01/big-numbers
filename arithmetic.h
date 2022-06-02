@@ -32,7 +32,7 @@ typedef struct bn_DivideWithRemainderResult {
 
 // Destroys `n`, freeing all its allocated heap memory and setting `*n` to
 // NULL.
-void destroy(BigNum **n);
+void bn_destroy(BigNum **n);
 
 // Returns a pointer to a newly created big number representing 0.
 BigNum *bn_zero();
